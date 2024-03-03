@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "argparse_gen"
+description = "Argparse code generator."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name="Vedran Sego", email = "vsego@vsego.org" },
+]
+license = "MIT"
+classifiers = [
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Typing :: Typed",
+]
+keywords = []
+dynamic = ["version"]
+dependencies = [
+]
+
+[project.urls]
+"Homepage" = "https://github.com/vsego/argparse_gen"
+"Bug Tracker" = "https://github.com/vsego/argparse_gen/issues"
+"Changelog" = "https://github.com/vsego/argparse_gen/blob/master/CHANGELOG.md"
+
+[project.scripts]
+argparse_gen = "argparse_gen:main"
+
+[tool]
+
+[tool.hatch.version]
+path = "src/argparse_gen/version.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/argparse_gen"]
