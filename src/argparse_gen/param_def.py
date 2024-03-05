@@ -1,7 +1,7 @@
 import enum
 import inspect
 import operator
-from typing import Any, get_args, _LiteralGenericAlias
+from typing import Any, get_args, Literal
 
 from .utils import EnumValue, EnumType, str_as_arg
 
@@ -47,16 +47,16 @@ class ParamDef:
         """
         Analize param's annotation and update its dictionary representation.
         """
-        param_type: type | None = None
+        param_type: type | EnumType | None = None
         choices: tuple[Any, ...] | None = None
         annotation = self.param.annotation
-        if type(annotation) is _LiteralGenericAlias:
+        if type(annotation) is type(Literal["1", "2"]):  # noqa: E721
             choices = get_args(annotation)
             param_types = {type(literal) for literal in choices}
             if len(param_types) == 1:
                 param_type = param_types.pop()
         elif inspect.isclass(annotation) and issubclass(annotation, enum.Enum):
-            choices = [EnumValue(enum_value) for enum_value in annotation]
+            choices = tuple(EnumValue(enum_value) for enum_value in annotation)
             param_type = EnumType(annotation)
             try:
                 result["default"] = EnumValue(result["default"])
@@ -80,18 +80,17 @@ class ParamDef:
         """
         Return attributes for :py:meth:`ArgumentParser.add_argument` as a dict.
         """
-        result = {"names": self.names}
+        result: dict[str, Any] = {"names": self.names}
         required = self.param.default is inspect.Parameter.empty
         if self.param.kind == inspect.Parameter.POSITIONAL_ONLY:
             if not required:
                 result["nargs"] = "?"
         else:
-            result["required"]: required
+            result["required"] = required
         if not required:
             result["default"] = self.param.default
         self._handle_annotation(result)
-        if self.help_str:
-            result["help"] = self.help_str
+        result["help"] = self.help_str or ""
         return result
 
     def as_repr_dict(self) -> dict[str, str]:
