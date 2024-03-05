@@ -90,8 +90,7 @@ class ParamDef:
         if not required:
             result["default"] = self.param.default
         self._handle_annotation(result)
-        if self.help_str:
-            result["help"] = self.help_str
+        result["help"] = self.help_str or ""
         return result
 
     def as_repr_dict(self) -> dict[str, str]:
