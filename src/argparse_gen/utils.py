@@ -38,9 +38,7 @@ class EnumValue:
         return f"{self.value.__class__.__name__}.{self.value.name}"
 
 
-def str_as_arg(
-    name: str | None, value: str, max_width: int = 72,
-) -> str:
+def str_as_arg(name: str, value: str, max_width: int = 72) -> str:
     """
     Return `f"{name}={value}"` properly capped at `max_width` width.
     """

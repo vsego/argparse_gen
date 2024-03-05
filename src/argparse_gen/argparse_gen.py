@@ -3,6 +3,7 @@ Argparse code generator.
 """
 
 import importlib
+import importlib.util
 import inspect
 import operator
 from pathlib import Path
@@ -91,14 +92,18 @@ class ArgparseGen:
             if isinstance(module_path, Path) else
             Path(module_path)
         )
-        if path.is_dir:
-            sys.path.insert(0, path.parent)
+        if path.is_dir():
+            sys.path.insert(0, str(path.parent))
             module = importlib.import_module(path.stem)
         else:
             module_name = cls._get_name(path.stem)
             spec = importlib.util.spec_from_file_location(module_name, path)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
+            if spec is not None:
+                module = importlib.util.module_from_spec(spec)
+                if spec.loader is not None:
+                    spec.loader.exec_module(module)
+            else:
+                raise RuntimeError("failed to create module spec")
         return cls(
             module,
             obj_name=obj_name,
@@ -123,9 +128,13 @@ class ArgparseGen:
         Return an `ArgparseGen` instance from a module as a source string.
         """
         spec = importlib.util.spec_from_loader(cls._get_name(), loader=None)
-        module = importlib.util.module_from_spec(spec)
-        exec(source, module.__dict__)
-        spec.loader.exec_module(module)
+        if spec is not None:
+            module = importlib.util.module_from_spec(spec)
+            exec(source, module.__dict__)
+            if spec.loader is not None:
+                spec.loader.exec_module(module)
+        else:
+            raise RuntimeError("failed to create module spec")
         return cls(
             module,
             obj_name=obj_name,
@@ -145,17 +154,18 @@ class ArgparseGen:
         """
         Return a dictionary of help items from docstring in `obj`.
         """
+        result: dict[str, str] = dict()
+        curr_name = ""
+        curr_help = ""
+
         def save_current() -> None:
             nonlocal result, curr_name, curr_help
             if curr_name and curr_help:
                 result[curr_name] = curr_help
 
-        result: dict[str, str] = dict()
         if not obj.__doc__:
             return result
 
-        curr_name = ""
-        curr_help = ""
         for line in obj.__doc__.split("\n"):
             line = line.strip()
             if not line:
